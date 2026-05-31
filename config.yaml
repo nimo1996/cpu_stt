@@ -1,0 +1,50 @@
+# STT 서버 설정
+# model: moonshine | funasr
+model: moonshine
+
+server:
+  host: "0.0.0.0"
+  port: 8765
+
+moonshine:
+  encoder: /home/aicc/cpu_stt/models/moonshine-tiny-ko/encoder_model.ort
+  decoder: /home/aicc/cpu_stt/models/moonshine-tiny-ko/decoder_model_merged.ort
+  tokens:  /home/aicc/cpu_stt/models/moonshine-tiny-ko/tokens.txt
+  num_threads: 4
+
+funasr:
+  model_id: "FunAudioLLM/Fun-ASR-MLT-Nano-2512"
+  hub: "hf"
+  language: "ko"
+
+# ──────────────────────────────────────────────────────────────────────────────
+# VAD 설정 (Silero VAD)
+# ──────────────────────────────────────────────────────────────────────────────
+vad:
+  sample_rate: 16000
+
+  # 발화 종료 판정: 무음이 이 시간(초) 지속되면 확정 결과(final) 반환
+  # Silero VAD 의 min_silence_duration_ms 로 변환됨
+  # - 낮을수록 빠르게 끊음 (레이턴시 ↓, 짧은 포즈에서 오분리 위험)
+  # - 높을수록 느리게 끊음 (자연스러운 문장 단위, 레이턴시 ↑)
+  # 권장: 자연 발화 0.6s / TTS·긴 문장 1.0s / 빠른 응답 0.4s
+  silence_duration_s: 0.3
+
+  # Partial 결과 반환 주기 (초)
+  # 발화 중 이 간격마다 중간 텍스트를 클라이언트에 전송
+  partial_interval_s: 0.5
+
+  # Silero 발화 감지 임계값 (0.0 ~ 1.0)
+  # - 높을수록 확실한 음성만 인식 (잡음 환경에 강함)
+  # - 낮을수록 작은 소리도 발화로 인식
+  # 권장: 일반 환경 0.5 / 잡음 환경 0.6~0.7 / 민감하게 0.3~0.4
+  threshold: 0.8
+
+  # 발화 전후 패딩 (ms): 발화 시작 직전 / 종료 직후 오디오를 포함할 길이
+  # 짧으면 첫 음절이 잘릴 수 있음. 권장: 100~300ms
+  speech_pad_ms: 200
+
+  # 최대 발화 길이 (초): 이 길이를 초과하면 무음 감지 전에 강제 flush
+  # Moonshine 등 인코더 모델은 긴 입력(>20s)에서 품질 저하
+  # 권장: 10~20s
+  max_utterance_s: 15
